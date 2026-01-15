@@ -337,7 +337,7 @@ export class WordGeneratorView extends ItemView {
         let sequenceArray: PatternSequence[] = [];
         // Get an array with patterns in odd position and non-pattern in even
         const regex = /{(.*?)}/g;
-        const fullSequence = this.mainPattern.split(regex);
+        const fullSequence = mainPattern.split(regex);
         // For each array position, construct a PatternSequence row
         let optional = false;
         fullSequence.forEach((element, index) => {
