@@ -6,3 +6,70 @@ available in the app when your plugin is enabled.
 If your plugin does not need CSS, delete this file.
 
 */
+.word-gen-custom-header{
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-block: 5px;
+}
+
+.how-to-use-div p {
+    margin-top: 3px;
+    margin-bottom: 3px;
+}
+
+.pattern, .buttons-div{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-block: 5px;
+}
+
+.pattern button {
+    width: 20%;
+    margin-top: 2px
+}
+
+.pattern-name {
+    width: 15%;
+}
+
+.pattern-content {
+    width: 60%;
+}
+
+.error-message {
+    color: red;
+}
+
+.selectable-text {
+    white-space: pre-line;
+    user-select: text;
+}
+
+.btn-icon-text {
+    margin-left: 3px;
+}
+
+.main-pattern-setting {
+    display: flex;
+    flex-direction: column;
+}
+
+.main-pattern-info {
+    width: 95%;
+}
+
+.main-pattern-control {
+    display: flex;
+    width: 100%;
+    justify-content: start;
+}
+
+.modal-header {
+    font-weight: bold;
+}
+
+.modal-div, .modal-header {
+    margin-bottom: 3px;
+}
