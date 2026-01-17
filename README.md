@@ -2,21 +2,21 @@
 
 A plugin for generating custom words based on patterns of characters, inspired by [kozuka](https://kozuka.kmwc.org/).
 
-# Manual installation
+## Manual installation
 
 - Download the latest release from the [Releases](https://github.com/SpagoAsparago/obsidian-word-generator-plugin/releases) page
 - Unzip the file and extract the `word-generator-plugin` folder to your vault `VaultFolder/.obsidian/plugins/`. 
 - It might be necessary to enable hidden folders in your file explorer to see the `.obsidian` folder.
 - Enable community plugins in Obsidian settings and turn on the plugin in Options>Community Plugins
 
-# Building from source
+## Building from source
 
 - Make sure your NodeJS is at least v16 (`node --version`).
 - Clone this repository inside a folder named `word-generator-plugin` in `.obsidian/plugins`.
 - `npm i` or `yarn` to install dependencies.
 - `npm run dev` to start compilation in watch mode.
 
-# How to use
+## How to use
 
 Click the new icon with the book at the bottom of the sidebar or use Ctrl+P to run the command `Open word generator view`. You can turn on 'Show all file types' in `Files & Links` Obsidian settings to see your exported configuration files.
 ### Patterns
