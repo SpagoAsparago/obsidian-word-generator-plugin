@@ -6,7 +6,7 @@ A plugin for generating custom words based on patterns of characters, inspired b
 
 - Download the latest release from the [Releases](https://github.com/SpagoAsparago/obsidian-word-generator-plugin/releases) page
 - Unzip the file and extract the `word-generator-plugin` folder to your vault `VaultFolder/.obsidian/plugins/`. 
-- It might have to enable hidden folders to see the `.obsidian` folder in the file explorer.
+- It might be necessary to enable hidden folders in your file explorer to see the `.obsidian` folder.
 - Enable community plugins in Obsidian settings and turn on the plugin in Options>Community Plugins
 
 # Building from source
