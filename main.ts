@@ -1,18 +1,20 @@
-import { App, Modal, Plugin, PluginSettingTab, Setting, WorkspaceLeaf } from 'obsidian';
-import { WordGeneratorView, VIEW_WORD_GENERATOR as VIEW_WORD_GENERATOR } from 'view';
-
-// Remember to rename these classes and interfaces!
+import { App, Plugin, PluginSettingTab, Setting, WorkspaceLeaf } from 'obsidian';
+import { WordGeneratorView, VIEW_WORD_GENERATOR as VIEW_WORD_GENERATOR, PatternLetters } from 'view';
 
 interface WordGeneratorPluginSettings {
 	wordCount: number;
 	filterDuplicates: boolean;
 	newLineEach: boolean;
+	mainPattern: string;
+	patterns: PatternLetters[];
 }
 
 const DEFAULT_SETTINGS: WordGeneratorPluginSettings = {
 	wordCount: 100,
 	filterDuplicates: true,
 	newLineEach: true,
+	mainPattern: '{C}{V}{C}',
+	patterns: [],
 }
 
 export default class WordGeneratorPlugin extends Plugin {
@@ -27,27 +29,40 @@ export default class WordGeneratorPlugin extends Plugin {
 		)
 
 		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon('dice', 'Sample Plugin', (_evt: MouseEvent) => {
+		const ribbonIconEl = this.addRibbonIcon('book-a', 'Word Generator', (_evt: MouseEvent) => {
 			//Activate view
 			this.activateView();
 		});
 		// Perform additional things with the ribbon
 		ribbonIconEl.addClass('my-plugin-ribbon-class');
 
-		// This adds a simple command that can be triggered anywhere
+		// Custom commands to open/close the view
 		this.addCommand({
-			id: 'open-sample-modal-simple',
-			name: 'Open sample modal (simple)',
+			id: 'open-word-generator-view',
+			name: 'Open word generator view',
 			callback: () => {
-				new SampleModal(this.app).open();
+				this.activateView();
 			}
 		});
+		this.addCommand({
+			id: 'close-word-generator-view',
+			name: 'Close word generator view',
+			callback: () => {
+				this.deactivateView();
+			}
+		})
 
-		// This adds a settings tab so the user can configure various aspects of the plugin
+		// Add settings tab and relative command
 		this.addSettingTab(new WordGeneratorSettingTab(this.app, this));
-
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
+		this.addCommand({
+			id: 'open-word-generator-settings',
+			name: 'Open settings',
+			callback: () => {
+				const setting = (this.app as any).setting;
+				setting.open();
+				setting.openTabById('word-generator-plugin');
+			}
+		})
 	}
 
 	async onunload() {
@@ -92,24 +107,6 @@ export default class WordGeneratorPlugin extends Plugin {
 	}
 }
 
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
-	}
-
-	onOpen() {
-		const { contentEl } = this;
-		contentEl.setText('This is a modal!');
-
-		contentEl.createEl('div', { text: 'How to Take Smart Notes' });
-	}
-
-	onClose() {
-		const { contentEl } = this;
-		contentEl.empty();
-	}
-}
-
 class WordGeneratorSettingTab extends PluginSettingTab {
 	plugin: WordGeneratorPlugin;
 
@@ -120,8 +117,8 @@ class WordGeneratorSettingTab extends PluginSettingTab {
 
 	display(): void {
 		const { containerEl } = this;
-
 		containerEl.empty();
+
 		// Words Count setting
 		new Setting(containerEl)
 			.setName('Words Count')

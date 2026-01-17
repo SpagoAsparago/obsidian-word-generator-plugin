@@ -8,9 +8,18 @@ If your plugin does not need CSS, delete this file.
 */
 .word-gen-custom-header{
     display: flex;
+    align-items: center;
     justify-content: space-between;
     gap: 10px;
     margin-block: 5px;
+}
+
+.word-gen-custom-header h4 {
+    margin: 0;
+}
+
+.close-view-button {
+    margin-left: auto;
 }
 
 .how-to-use-div p {

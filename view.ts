@@ -1,6 +1,6 @@
 import WordGeneratorPlugin from 'main';
 import { JSONFileSuggestModal, SelectFolderModal } from 'modals';
-import { ItemView, WorkspaceLeaf, Notice, setIcon, Setting, setTooltip, TFile, TextComponent } from 'obsidian';
+import { ItemView, WorkspaceLeaf, Notice, setIcon, Setting, setTooltip, TextComponent, debounce } from 'obsidian';
 // @ts-ignore
 import helpTemplate from './help.html';
 
@@ -19,7 +19,7 @@ interface PatternSequence {
     isOptional: boolean;
 }
 
-interface PatternLetters {
+export interface PatternLetters {
     name: string;
     letters: string[];
 }
@@ -38,15 +38,16 @@ export interface exportPatternData {
 
 export class WordGeneratorView extends ItemView {
     private plugin: WordGeneratorPlugin;
-
     private patterns: PatternRow[] = [];
-
-    private mainPattern: string = '{C}{V}{C}';
     private mainPatternInput: TextComponent;
-
     private outputText: HTMLElement;
     private errorMessage: HTMLElement;
     private patternsContainer: HTMLElement;
+
+    // Debounce for optimized saving of mainPattern
+    private debouncedSave = debounce(async () => {
+        await this.plugin.saveSettings();
+    }, 750);
 
     constructor(leaf: WorkspaceLeaf, plugin: WordGeneratorPlugin) {
         super(leaf);
@@ -66,39 +67,55 @@ export class WordGeneratorView extends ItemView {
         const { contentEl } = this;
         contentEl.empty();
 
-        const viewHeader = contentEl.createDiv({ cls: 'word-gen-custom-header'});
+        const viewHeader = contentEl.createDiv({ cls: 'word-gen-custom-header' });
         viewHeader.createEl('h4', { text: 'Word Generator' });
-        const pluginSettingsButton = viewHeader.createEl('button', { text: 'Settings'})
+        
+        // Close view button
+        const closeViewButton = viewHeader.createEl('button', { cls: 'close-view-button' });
+        setIcon(closeViewButton, 'x');
+        setTooltip(closeViewButton, 'Close this view');
+        closeViewButton.addEventListener('click', () => {
+            this.plugin.deactivateView();
+        })
+        // Plugin settings button
+        const pluginSettingsButton = viewHeader.createEl('button', { cls: 'mod-cta' })
         setIcon(pluginSettingsButton, 'settings');
         setTooltip(pluginSettingsButton, 'Plugin Settings');
         pluginSettingsButton.addEventListener('click', () => {
-            //this.app.setting.openTabById('hello-world');
-            //.app.setting.open()
-            //.app.setting.openTabById(plugin_id)
+            // Open settings tab via command
+            (this.app as any).commands.executeCommandById(`${this.plugin.manifest.id}:open-word-generator-settings`)
         })
-        
+
+
         contentEl.createEl('p', { text: 'Generate new words with custom patterns' });
-        const howToUseDiv = contentEl.createDiv({cls: 'how-to-use-div'});
+        const howToUseDiv = contentEl.createDiv({ cls: 'how-to-use-div' });
         howToUseDiv.innerHTML = helpTemplate;
-        
-        // Create default patterns
+
         this.patternsContainer = contentEl.createSpan({ cls: 'pattern-container' });
-        this.createDefaultRows();
+        // Check if stored patterns from plugin settings are empty
+        if (this.plugin.settings.patterns.length === 0) {
+            // Create default patterns
+            this.createDefaultRows();
+        } else {
+            // Load patterns from settings
+            this.loadPatternsFromSettings();
+        }
 
         this.errorMessage = contentEl.createEl('p', {
             text: '',
             cls: 'error-message',
         });
-
         const mainPatternSetting = new Setting(contentEl)
             .setName('Main pattern:')
             .addText(text => {
                 this.mainPatternInput = text;
                 text
-                    .setValue(String(this.mainPattern)) // Initialize with default 
+                    .setValue(String(this.plugin.settings.mainPattern)) // Initialize with default 
                     .onChange((value) => {
-                        this.mainPattern = value;
-                    })
+                        this.plugin.settings.mainPattern = value;
+                        // Save settings to disk
+                        this.debouncedSave();
+                    });
 
             });
         // Add classes to setting elements for styling
@@ -126,16 +143,18 @@ export class WordGeneratorView extends ItemView {
         setTooltip(importButton, 'Import patterns and settings from JSON');
 
         // Event listeners for buttons
-        generateButton.addEventListener('click', () => {
+        generateButton.addEventListener('click', async () => {
+            // Save patterns to plugin settings
+            await this.savePatternsToSettings(this.patterns);
             //Reset error message
             this.errorMessage.textContent = '';
             // Check if word count is valid
             if (!isNaN(this.plugin.settings.wordCount) && this.plugin.settings.wordCount > 0) {
                 // Check if main pattern is valid
-                if (this.validateMainPattern(this.mainPattern)) {
+                if (this.validateMainPattern(this.plugin.settings.mainPattern)) {
                     // Clear previous output and generate new words
                     this.outputText.textContent = '';
-                    this.generateWords(this.plugin.settings.wordCount, this.mainPattern);
+                    this.generateWords(this.plugin.settings.wordCount, this.plugin.settings.mainPattern);
                 }
             } else {
                 this.errorMessage.textContent = 'Invalid number of words to generate';
@@ -164,6 +183,8 @@ export class WordGeneratorView extends ItemView {
     }
 
     async onClose() {
+        // Save local patterns to disk
+        this.savePatternsToSettings(this.patterns);
         // Nothing to clean up.
     }
 
@@ -250,7 +271,7 @@ export class WordGeneratorView extends ItemView {
     // Delete all patterns from the array and view
     private deleteAllPatterns() {
         // Remove from view each pattern
-        for(const pattern of this.patterns) {
+        for (const pattern of this.patterns) {
             pattern.container.remove();
         }
         // Empty array
@@ -259,7 +280,7 @@ export class WordGeneratorView extends ItemView {
 
     // Generate the words using existing patterns
     private generateWords(count: number, mainPattern: string) {
-        // Subdivide each existing pattern into an array of its letters for ease of access
+        // Turn HTMLelement array into array of string for ease of access
         const letters: PatternLetters[] = [];
         this.patterns.forEach(pattern => {
             if (pattern.nameInput.value !== '' && pattern.contentInput.value !== '') {
@@ -277,7 +298,7 @@ export class WordGeneratorView extends ItemView {
         }
 
         // Subdivide the main pattern into an array to construct each word
-        const mainPatternSequence = this.getMainPatternSequence(this.mainPattern);
+        const mainPatternSequence = this.getMainPatternSequence(mainPattern);
 
         // Generate all the words from the main pattern
         const words: string[] = [];
@@ -450,7 +471,7 @@ export class WordGeneratorView extends ItemView {
             pattern: element.contentInput.value,
         }))
         //Add main pattern
-        patternData.push({ name: 'main', pattern: this.mainPattern });
+        patternData.push({ name: 'main', pattern: this.plugin.settings.mainPattern });
         // Write patterns and settings to JSON
         const exportData: exportPatternData = {
             'patterns': patternData,
@@ -483,12 +504,13 @@ export class WordGeneratorView extends ItemView {
                     // Write main pattern
                     const mainPattern = data.patterns.find((p) => p.name === 'main')
                     if (mainPattern) {
-                        // Update class attribute and Setting in the view
-                        this.mainPattern = mainPattern.pattern;
-                        this.mainPatternInput.setValue(this.mainPattern); 
+                        // Update mainPattern in view and setting value
+                        this.plugin.settings.mainPattern = mainPattern.pattern;
+                        this.mainPatternInput.setValue(mainPattern.pattern);
                     } else {
                         new Notice('Error: main pattern could not be loaded')
                     }
+                    await this.plugin.saveSettings();
                     // Delete existing patterns
                     this.deleteAllPatterns();
                     // Write new patterns
@@ -498,6 +520,8 @@ export class WordGeneratorView extends ItemView {
                             this.patterns.push(newRow);
                         }
                     }
+                    // Save to plugin settings
+                    await this.savePatternsToSettings(this.patterns);
                     new Notice('Imported settings and pattern data!')
                 } else {
                     new Notice(`Error: selected file contains invalid data`)
@@ -505,16 +529,38 @@ export class WordGeneratorView extends ItemView {
             } catch (error) {
                 new Notice(`Failed to parse JSON file: ${error}`);
             }
-
-            
         }).open();
     }
 
     // Type guard to check that data matches the type of exportPatternData
     private isValidImportData(data: any): data is exportPatternData {
-        const hasPatterns = Array.isArray(data.patterns) && 
-        data.patterns.every((p: any) => typeof p.name === 'string');
-        return hasPatterns && 
+        const hasPatterns = Array.isArray(data.patterns) &&
+            data.patterns.every((p: any) => typeof p.name === 'string');
+        return hasPatterns &&
             data.settings && typeof data.settings.numWords === 'number';
+    }
+
+    // Save patterns to plugin settings
+    private async savePatternsToSettings(localPatternRows: PatternRow[]) {
+        let stringPatterns: PatternLetters[] = [];
+        for (const p of localPatternRows) {
+            const row: PatternLetters = {
+                name: p.nameInput.value,
+                letters: p.contentInput.value.split('/')
+            }
+            stringPatterns.push(row)
+        }
+        this.plugin.settings.patterns = stringPatterns;
+        await this.plugin.saveSettings();
+        return;
+    }
+
+    private loadPatternsFromSettings() {
+        this.deleteAllPatterns();
+        const savedPatterns = this.plugin.settings.patterns;
+        for (const p of savedPatterns) {
+            const newRow = this.createRow(p.name, p.letters.join('/'))
+            this.patterns.push(newRow);
+        }
     }
 }

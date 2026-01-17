@@ -1,11 +1,11 @@
 {
-	"id": "hello-word",
-	"name": "Hello World",
+	"id": "word-generator-plugin",
+	"name": "Word Generator Plugin",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"description": "An Obsidian plugin for generating custom words inspired by Awkwords.",
+	"author": "SpagoAsparago",
+	"authorUrl": "https://github.com/SpagoAsparago/obsidian-word-generator-plugin",
+	"fundingUrl": "https://github.com/SpagoAsparago/obsidian-word-generator-plugin",
 	"isDesktopOnly": false
 }
