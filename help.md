@@ -16,7 +16,7 @@ You can set the total word count, toggle "one word per line," and filter out dup
 ### Exporting and importing patterns
 Use the save icon button to create a configuration file containing your settings, patterns and main pattern. The export button will load this JSON file and overwrite your current patterns.
 ### Automated saving
-Patterns and the main pattern are automatically saved to Obsidian settings when closing the word generator page or clicking the 'Generate' button, as well as importing from a configuration file.
+Patterns and the main pattern are automatically saved to Obsidian settings when closing the word generator page or selecting the <b>Generate</b> button, as well as importing from a configuration file.
 <br>
 
 </details>
