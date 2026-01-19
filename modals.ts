@@ -1,4 +1,4 @@
-import { AbstractInputSuggest, App, FuzzySuggestModal, Modal, Notice, Setting, SuggestModal, TFile, TFolder } from "obsidian";
+import { AbstractInputSuggest, App, FuzzySuggestModal, Modal, normalizePath, Notice, Setting, SuggestModal, TFile, TFolder } from "obsidian";
 import { exportPatternData } from 'view';
 
 // Modal for exporting configuration
@@ -11,7 +11,6 @@ export class SelectFolderModal extends Modal {
     }
 
     onOpen() {
-        const folders = this.app.vault.getAllFolders();
         const { contentEl } = this;
         contentEl.createEl('p', { cls: 'modal-header', text: 'Save configuration to your vault' });
         contentEl.createEl('div', { cls: 'modal-div', text: 'If a file with the same name already exists, it will be overwritten' });
@@ -54,26 +53,26 @@ export class SelectFolderModal extends Modal {
             new Notice('File name can\'t be empty');
             return
         }
+        const normalizedFolder = normalizePath(folder.trim());
         //Create the input folder if it doesn't exist
-        if (folder !== '' && this.app.vault.getFolderByPath(folder) === null) {
-            await this.app.vault.createFolder(folder);
+        if (normalizedFolder !== '' && this.app.vault.getFolderByPath(normalizedFolder) === null) {
+            await this.app.vault.createFolder(normalizedFolder);
         }
-
         // Stringify content to json
         const content = JSON.stringify(data, null, 2);
-
-        // Remove slashes to avoid path formatting issues
-        let filePath = folder.trim();
-        if (filePath.startsWith('/')) filePath = filePath.slice(1);
-        if (filePath.endsWith('/')) filePath = filePath.slice(0, -1);
-        // Build the filePath with the fileName and json extension
-        filePath = filePath ? `${filePath}/${fileName}.json` : `${fileName}.json`;
+        // Build full file path
+        const filePath = normalizePath(`${normalizedFolder}/${fileName}.json`);
 
         // Check if a file with the same name already exists
         const abstractFile = this.app.vault.getAbstractFileByPath(filePath)
         if (abstractFile instanceof TFile) {
             // Overwrite the file
-            await this.app.vault.modify(abstractFile, content);
+            await this.app.vault.process(abstractFile, (oldData) => {
+                if (oldData === content) {
+                    return oldData; // Don't overwrite if content didn't change
+                }
+                return content;
+            })
             new Notice(`File ${filePath} has been updated`);
         } else {
             // Create the new file
