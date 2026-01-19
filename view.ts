@@ -14,8 +14,7 @@ interface PatternRow {
 }
 
 interface PatternSequence {
-    content: string;
-    isPattern: boolean;
+    content: string
     isOptional: boolean;
 }
 
@@ -69,7 +68,7 @@ export class WordGeneratorView extends ItemView {
 
         const viewHeader = contentEl.createDiv({ cls: 'word-gen-custom-header' });
         viewHeader.createEl('h4', { text: 'Word Generator' });
-        
+
         // Close view button
         const closeViewButton = viewHeader.createEl('button', { cls: 'close-view-button' });
         setIcon(closeViewButton, 'x');
@@ -278,65 +277,64 @@ export class WordGeneratorView extends ItemView {
         this.patterns = [];
     }
 
+    private mapPatternRows(localPatternRows: PatternRow[]) {
+        const characterSets = new Map();
+        for (const pattern of localPatternRows) {
+            characterSets.set(
+                pattern.nameInput.value, 
+                pattern.contentInput.value.split('/'),
+            );
+        }
+        return characterSets;
+    }
+
     // Generate the words using existing patterns
     private generateWords(count: number, mainPattern: string) {
-        // Turn HTMLelement array into array of string for ease of access
-        const letters: PatternLetters[] = [];
-        this.patterns.forEach(pattern => {
-            if (pattern.nameInput.value !== '' && pattern.contentInput.value !== '') {
-                const lettersRow: PatternLetters = {
-                    name: pattern.nameInput.value,
-                    letters: (pattern.contentInput.value).split('/')
-                }
-                letters.push(lettersRow);
-            }
-        });
 
         if (this.checkDuplicatePatternName()) {
             this.errorMessage.textContent = 'Different patterns can\'t have the same name'
             return;
         }
+        // Array of objects with pattern name as key and content as value
+        const referencedPatterns = this.mapPatternRows(this.patterns);
 
         // Subdivide the main pattern into an array to construct each word
-        const mainPatternSequence = this.getMainPatternSequence(mainPattern);
+        const mainPatternSequence = this.parseMainPattern(mainPattern);
 
         // Generate all the words from the main pattern
         const words: string[] = [];
         for (let i = 0; i < count; i++) {
             let word = '';
-            // Concatenate each element of mainPatternSequence
-            mainPatternSequence.forEach(element => {
-                let characters = '';
-                // If the element is a pattern name, get a random letter
-                if (element.isPattern) {
-                    // Find the corresponding pattern
-                    const patternFound = letters.find(pattern => pattern.name === element.content);
-                    if (patternFound) { //Always true but necessary for synthax
-                        // Generate a random array position
-                        const randomIndex = Math.floor(Math.random() * patternFound.letters.length)
-                        // Append the character(s) to the word
-                        characters = patternFound.letters[randomIndex];
+            // Get rnd index from 1st Level (split choice)
+            const sequence = mainPatternSequence[Math.floor(Math.random() * mainPatternSequence.length)]
+            // Parse each element from 2nd Level
+            for (const path of sequence) {
+                // Get a rnd index from 3rd Level (split choice inside ())
+                const index = Math.floor(Math.random()*path.length);
+                let newChars = path[index].content;
+                // Check for pattern references
+                const refPatterns = newChars.match(/\{[^}]+\}/g) || [];
+                if (refPatterns.length > 0) {
+                    // Substitute references with patterns content
+                    for (const ref of refPatterns) {
+                        const refContent = referencedPatterns.get(ref.slice(1,-1));
+                        const rndId = Math.floor(Math.random()*refContent.length);
+                        newChars = newChars.replace(ref, refContent[rndId]);
                     }
                 }
-                // Append the raw string if it's not a pattern
-                else {
-                    characters = element.content;
-                }
-                // If element is optional, only add it to word 50% of the times
-                if (element.isOptional) {
-                    if (Math.random() < 0.5) { // TODO:Define global % chance for a setting?
-                        word += characters;
-                    }
+                // Only add optional 50% of the time
+                if (path[index].isOptional) {
+                    if (Math.random() < 0.5) word += newChars; // Add setting for global % chance?
                 } else {
-                    word += characters;
-                }
-            });
+                    word += newChars;
+                }   
+            }
             words.push(word);
         }
         this.writeOutput(words);
     }
 
-    //Display generated words according to settings
+    // Display generated words according to settings
     private writeOutput(input: string[]) {
         //Filter duplicates from the array if enabled
         let words = input;
@@ -353,39 +351,72 @@ export class WordGeneratorView extends ItemView {
             this.outputText.textContent += word + separator;
         })
     }
+    /*
+    Returns a 3D array => 1st Level: splits in main pattern
+    2nd Level: optional sequences, 3rd Level: split choices between ()
+     e.g.; a(b)c(d)/(f)g/(h/i)
+    [
+        [ [a] ] , [O [b] ], [ [c] ], [O [d] ]
+    ],
+    [
+        [O [f] ] , [ [g] ]
+    ],
+    [
+        [O [h,i] ]
+    ] 
+    */
+    private parseMainPattern(input: string): PatternSequence[][][] {
+        const fullSequence: PatternSequence[][][] = [];
+        let currentPath: PatternSequence[][] = [];
+        let currentText = "";
 
-    private getMainPatternSequence(mainPattern: string): PatternSequence[] {
-        let sequenceArray: PatternSequence[] = [];
-        // Get an array with patterns in odd position and non-pattern in even
-        const regex = /{(.*?)}/g;
-        const fullSequence = mainPattern.split(regex);
-        // For each array position, construct a PatternSequence row
-        let optional = false;
-        fullSequence.forEach((element, index) => {
-            // If a round bracket is open, the next sequence is optional
-            if (element == '(') {
-                optional = true;
-                // Skip to next sequence
-                return;
-            } else if (element == ')') {
-                // No more optional sequences until the next bracket
-                optional = false;
-                return;
+        const flushText = (isOptional: boolean = false) => {
+            if (currentText.length > 0) {
+                // A standard segment has only one choice in the 3rd dimension
+                currentPath.push([{
+                    content: currentText,
+                    isOptional: isOptional,
+                }]);
+                currentText = "";
             }
-            // Filter empty positions from the odd/even structure
-            if (element !== '') {
-                // Even position in the array => Not a pattern
-                const newRow: PatternSequence = {
-                    content: element,
-                    isPattern: (index % 2 !== 0 ? true : false), //Not a pattern if in even
-                    isOptional: optional
-                }
-                sequenceArray.push(newRow);
-            }
+        };
+        let i = 0;
+        // Parse every character
+        while (i < input.length) {
+            const char = input[i];
 
-        });
-        return sequenceArray;
+            if (char === '/') {
+                flushText();
+                fullSequence.push(currentPath);
+                currentPath = [];
+                i++;
+            }
+            else if (char === '(') {
+                // Finish any text before the '('
+                flushText();
+                const endIdx = input.indexOf(')', i);
+                const inside = input.substring(i + 1, endIdx);
+                // Handle slashes inside parentheses
+                const choices = inside.split('/').map(choice => ({
+                    content: choice,
+                    isOptional: true, // Everything inside () is optional
+                    isReference: false
+                }));
+                // Push the whole group of choices as one segment
+                currentPath.push(choices);
+                // Skip index after the ')'
+                i = endIdx + 1;
+            }
+            else {
+                currentText += char;
+                i++;
+            }
+        }
+        flushText();
+        if (currentPath.length > 0) fullSequence.push(currentPath);
+        return fullSequence;
     }
+
     // Returns true if there are duplicate names
     private checkDuplicatePatternName(): boolean {
         //If there are duplicates, the set has a different size than the array
@@ -418,6 +449,11 @@ export class WordGeneratorView extends ItemView {
             return false;
         }
 
+        if (this.hasNestedParenthesis(mainPattern)) {
+            this.errorMessage.textContent = 'Parenthesis nesting is not allowed';
+            return false;
+        }
+
         //Regex to capture what's inside the brackets
         const regex = /{(.*?)}/g;
         //Read all pattern names in the main pattern
@@ -440,10 +476,6 @@ export class WordGeneratorView extends ItemView {
                     return false;
                 }
             };
-        } else {
-            //No patterns found in main pattern
-            this.errorMessage.textContent = 'Main pattern is invalid'
-            return false;
         }
         return true;
     }
@@ -458,6 +490,21 @@ export class WordGeneratorView extends ItemView {
             if (counter < 0) return true;
         }
         return counter !== 0;
+    }
+
+    private hasNestedParenthesis(input: string): boolean {
+        let isBracketOpen = false;
+        for (const char of input) {
+            if (char === '(') {
+                if (isBracketOpen) {
+                    return true;
+                }
+                isBracketOpen = true;
+            } else if (char === ')') {
+                isBracketOpen = false;
+            }
+        }
+        return isBracketOpen;
     }
 
     private exportSettings() {
