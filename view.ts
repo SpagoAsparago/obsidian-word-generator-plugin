@@ -1,8 +1,8 @@
 import WordGeneratorPlugin from 'main';
 import { JSONFileSuggestModal, SelectFolderModal } from 'modals';
-import { ItemView, WorkspaceLeaf, Notice, setIcon, Setting, setTooltip, TextComponent, debounce } from 'obsidian';
+import { ItemView, WorkspaceLeaf, Notice, setIcon, Setting, setTooltip, TextComponent, debounce, MarkdownRenderer, Component } from 'obsidian';
 // @ts-ignore
-import helpTemplate from './help.html';
+import helpMarkdown from './help.md';
 
 export const VIEW_WORD_GENERATOR = 'example-view';
 
@@ -88,7 +88,13 @@ export class WordGeneratorView extends ItemView {
 
         contentEl.createEl('p', { text: 'Generate new words with custom patterns' });
         const howToUseDiv = contentEl.createDiv({ cls: 'how-to-use-div' });
-        howToUseDiv.innerHTML = helpTemplate;
+        MarkdownRenderer.render(
+            this.app,
+            helpMarkdown,
+            howToUseDiv,
+            '',
+            new Component()
+        )
 
         this.patternsContainer = contentEl.createSpan({ cls: 'pattern-container' });
         // Check if stored patterns from plugin settings are empty

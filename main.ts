@@ -121,7 +121,7 @@ class WordGeneratorSettingTab extends PluginSettingTab {
 
 		// Words Count setting
 		new Setting(containerEl)
-			.setName('Words Count')
+			.setName('Words count')
 			.setDesc('Number of words to generate')
 			.addText(text => text
 				.setPlaceholder('Enter your secret')
@@ -133,7 +133,7 @@ class WordGeneratorSettingTab extends PluginSettingTab {
 			);
 		// Filter duplicates setting
 		new Setting(containerEl)
-			.setName('Filter duplicates.')
+			.setName('Filter duplicates')
 			.setDesc('Remove duplicated words.Total words count will be lower to avoid infinite loops.')
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.filterDuplicates)
@@ -144,7 +144,7 @@ class WordGeneratorSettingTab extends PluginSettingTab {
 			);
 		// New line setting
 		new Setting(containerEl)
-			.setName('New Line for each word')
+			.setName('New line for each word')
 			.setDesc('Every word will be generated on a new line.')
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.newLineEach)

@@ -40,6 +40,7 @@ const context = await esbuild.context({
 	outfile: "main.js",
 	minify: prod,
 	loader: {
+		'.md': 'text',
 		'.html': 'text'
 	},
 });
