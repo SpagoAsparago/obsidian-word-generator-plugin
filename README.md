@@ -22,10 +22,10 @@ Click the new icon with the book at the bottom of the sidebar or use Ctrl+P to r
 ### Patterns
 Patterns are your word components. Use <b>/</b> to separate characters or groups with an equal chance of selection. Create new patterns with the <b>+</b> button.
 ### Main pattern
-Words are built using this sequence. To reference a pattern, enclose its name in curly brackets, e.g., `{C}`. At least one pattern must be referenced.
+Wods are built using this sequence. To reference a pattern, encrlose its name in curly brackets, e.g., `{C}`. 
+You can also use <b>/</b> in the main pattern.
 ### Optional sequence
-Enclose characters or patterns in parentheses to give them a 50% chance of being used.
-Note: Optional sequences only work in the Main Pattern; parentheses inside individual patterns are ignored.
+Enclose characters or patterns in parentheses to give them a 50% chance of being used. Only works in the main pattern.
 ### Settings
 Access settings via the button at the top, the command or the Community Plugins tab. 
 You can set the total word count, toggle "one word per line," and filter out duplicate results.
