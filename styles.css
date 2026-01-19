@@ -48,7 +48,7 @@ If your plugin does not need CSS, delete this file.
 }
 
 .error-message {
-    color: red;
+    color: var(--color-red)
 }
 
 .selectable-text {
