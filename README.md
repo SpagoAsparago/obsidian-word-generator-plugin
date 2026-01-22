@@ -18,19 +18,20 @@ A plugin for generating custom words based on patterns of characters, inspired b
 
 ## How to use
 
-Click the new icon with the book at the bottom of the sidebar or use Ctrl+P to run the command `Open word generator view`. You can turn on 'Show all file types' in `Files & Links` Obsidian settings to see your exported configuration files.
-### Patterns
-Patterns are your word components. Use <b>/</b> to separate characters or groups with an equal chance of selection. Create new patterns with the <b>+</b> button.
+Click the new icon with the book at the bottom of the sidebar or use Ctrl+P to execute the command `Open word generator view`. You can turn on 'Show all file types' in `Files & Links` Obsidian settings to see your exported configuration files.
+
 ### Main pattern
-Wods are built using this sequence. To reference a pattern, encrlose its name in curly brackets, e.g., `{C}`. 
-You can also use <b>/</b> in the main pattern.
+Words are built using this sequence. Use <b>/</b> to separate characters or groups with an equal chance of selection.
+### Referenced Patterns
+Patterns are useful to avoid your main pattern getting too long. Create new patterns with the <b>+</b> button, then you can reference it in the main pattern by enclosing its name in curly brackets, e.g., `{C}`. 
+Patterns can also contain split choices with <b>/</b>.
 ### Optional sequence
 Enclose characters or patterns in parentheses to give them a 50% chance of being used. Only works in the main pattern.
 ### Settings
 Access settings via the button at the top, the command or the Community Plugins tab. 
 You can set the total word count, toggle "one word per line," and filter out duplicate results.
 ### Exporting and importing patterns
-Use the save icon button to create a configuration file containing your settings, patterns and main pattern. The export button will load this JSON file and overwrite your current patterns.
+Use the save icon button to create a configuration file containing your settings, patterns and main pattern. The import button will load this JSON file and overwrite your current patterns.
 ### Automated saving
 Patterns and the main pattern are automatically saved to Obsidian settings when closing the word generator page or selecting the <b>Generate</b> button, as well as importing from a configuration file.
 
